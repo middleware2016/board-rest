@@ -17,7 +17,7 @@ exports.seed = function(knex, Promise) {
                 });
             })
         }).then(function(hash){
-            return knex('users').insert({id: 1, name: 'test', email:'test@test.com', password:hash});
+            return knex('users').insert({id: 1, name: 'test', email:'test@test.com', password:hash, created_at: Date.now(), updated_at: Date.now()});
         })
     );
 };

@@ -5,7 +5,23 @@
 let User = require('../models/User');
 
 exports.list = (req, res, next)=>{
-     User.fetchAll()
+    //order
+    let order = req.query.order || 'created_at';
+    let orderType = req.query.order_type;
+    if(orderType!='desc')
+        orderType = 'asc';
+
+    //filters
+    let search = req.query.search || '%';
+
+    //retrieve
+    User.forge()
+        .query(wb=>
+            wb.where('name', 'LIKE', search)
+            .orWhere('email', 'LIKE', search)
+        )
+        .orderBy(order, orderType)
+        .fetchAll()
         .then(data=>res.send(data.toJSON()))
         .catch(err=>{
             console.error(err);
@@ -42,8 +58,8 @@ exports.post = (req, res, next)=>{
     }).save()
         .then(data=>res.send(data.toJSON()))
         .catch((err) => {
-            if (err.code === 'ER_DUP_ENTRY' || err.code == '23505') {
-                return res.status(422).send({ msg: 'The name you have entered is already associated with another account.' });
+            if (err.code === 'ER_DUP_ENTRY' || err.code == '23505' || err.code == 'SQLITE_CONSTRAINT') {
+                return res.status(422).send({ msg: 'The name/email you have entered is already associated with another account.' });
             }
             console.error(err);
             res.status(500).send({msg: "Internal server Error"});
