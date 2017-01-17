@@ -4,7 +4,8 @@
   "description": "A service that can help people keep track of their board games nights, with a REST API.",
   "main": "server.js",
   "scripts": {
-    "run": "node server.js",
+    "start": "node server.js",
+    "seeds": "node node_modules/knex/bin/cli.js migrate:latest & node node_modules/knex/bin/cli.js seed:run",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {

@@ -9,7 +9,7 @@ bookshelf.plugin('registry');
 
 let User = bookshelf.Model.extend({
     tableName: 'users',
-    hasTimestamps: true,
+    hasTimestamps: true, //manage in automatic way created_at and updated_at
 
     initialize: function() {
         this.on('saving', this.hashPassword, this);
@@ -38,7 +38,7 @@ let User = bookshelf.Model.extend({
         });
     },
 
-    hidden: ['password'],
+    hidden: ['password'], //hide from json deserialized
 });
 
 module.exports = bookshelf.model('User', User);
