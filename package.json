@@ -1,0 +1,24 @@
+{
+  "name": "board-rest",
+  "version": "1.0.0",
+  "description": "A service that can help people keep track of their board games nights, with a REST API.",
+  "main": "server.js",
+  "scripts": {
+    "run": "node server.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/middleware2016/board-rest.git"
+  },
+  "author": "Claudio Cardinale, Alex Delbono, Pietro De Nicolao",
+  "license": "GPL-3.0",
+  "bugs": {
+    "url": "https://github.com/middleware2016/board-rest/issues"
+  },
+  "homepage": "https://github.com/middleware2016/board-rest#readme",
+  "dependencies": {
+    "dotenv": "^4.0.0",
+    "express": "^4.14.0"
+  }
+}
