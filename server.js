@@ -12,6 +12,7 @@ var expressValidator = require('express-validator');
 
 //controllers
 let user = require('./controllers/user');
+let game = require('./controllers/game');
 
 dotenv.load();
 let app = express();
@@ -31,9 +32,14 @@ app.use(compression());//gzip compression
 app.get('/', function (req, res) {
     res.send('Hello World!');
 });
+//user
 app.get('/users/', user.list);
 app.get('/users/:id', user.get);
 app.post('/users/', user.post);
+//games
+app.get('/games/', game.list);
+app.get('/games/:id', game.get);
+app.post('/games/', game.post);
 
 
 app.listen(app.get('port'), function() {

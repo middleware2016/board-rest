@@ -1,0 +1,62 @@
+/**
+ * Created by claudio on 17/01/17.
+ */
+"use strict";
+let Game = require('../models/Game');
+
+exports.list = (req, res, next)=>{
+    //order
+    let order = req.query.order || 'created_at';
+    let orderType = req.query.order_type;
+    if(orderType!='desc')
+        orderType = 'asc';
+
+    //filters
+    let search = req.query.search || '%';
+
+    //retrieve
+    Game.forge()
+        .query(wb=>
+            wb.where('name', 'LIKE', search)
+            .orWhere('designers', 'LIKE', search)
+        )
+        .orderBy(order, orderType)
+        .fetchAll()
+        .then(data=>res.send(data.toJSON()))
+        .catch(err=>{
+            console.error(err);
+            res.status(500).send({msg: "Internal server Error"});
+        })
+};
+
+exports.get = (req, res, next)=>{
+    new Game({id: req.params.id}).fetch()
+        .then(data=>res.send(data.toJSON()))
+        .catch(err=>{
+            //TODO check reason
+            res.status(404).send({msg: "Game not found"})
+        })
+};
+
+exports.post = (req, res, next)=>{
+    req.assert('name', 'Name cannot be blank').notEmpty();
+    req.assert('designers', 'Designers cannot be blank').notEmpty(); //TODO check is list
+    req.assert('cover', 'Cover cannot be blank').notEmpty();
+
+    var errors = req.validationErrors();
+
+    if (errors) {
+        return res.status(422).send(errors);
+    }
+
+    new Game({
+        name: req.body.name,
+        designers: req.body.designers,
+        cover: req.body.cover
+    }).save()
+        .then(data=>res.send(data.toJSON()))
+        .catch((err) => {
+            console.error(err);
+            res.status(500).send({msg: "Internal server Error"});
+        });
+};
