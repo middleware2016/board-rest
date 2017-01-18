@@ -9,6 +9,7 @@ exports.seed = function(knex, Promise) {
         // Deletes ALL existing entries
         knex('users').del(),
         knex('games').del(),
+        knex('plays').del(),
 
         //user
         new Promise(function(resolve, reject) {

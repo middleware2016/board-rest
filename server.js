@@ -37,6 +37,8 @@ app.use(compression());//gzip compression
 app.get('/users/', user.list);
 app.get('/users/:id', user.get);
 app.post('/users/', user.post);
+app.put('/users/:id', user.put);
+app.delete('/users/:id', user.delete);
 //games
 app.get('/games/', game.list);
 app.get('/games/:id', game.get);
