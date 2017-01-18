@@ -46,6 +46,16 @@ app.get('/users/:userId/plays/', play.userMiddleware, play.list);
 app.get('/users/:userId/plays/:id', play.userMiddleware, play.get);
 app.post('/users/:userId/plays/', play.userMiddleware, play.post);
 
+//errors
+let notImplemented = (req, res, next) =>{
+    console.log(req.method);
+    res.status(405).send(`Cannot ${req.method} ${req.url}`);
+};
+
+app.get('*', notImplemented);
+app.post('*', notImplemented);
+app.put('*', notImplemented);
+app.delete('*', notImplemented);
 
 
 app.listen(app.get('port'), function() {
