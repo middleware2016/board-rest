@@ -5,6 +5,7 @@
 let bcrypt = require('bcrypt-nodejs');
 let bookshelf = require('../bookshelf');
 bookshelf.plugin('registry');
+let Play = require('./Play');//keep even if it is not used directly
 
 
 let User = bookshelf.Model.extend({
@@ -36,6 +37,10 @@ let User = bookshelf.Model.extend({
         bcrypt.compare(password, model.get('password'), function(err, isMatch) {
             done(err, isMatch);
         });
+    },
+
+    plays() {
+        return this.hasMany('Play', 'user_id');
     },
 
     hidden: ['password'], //hide from json deserialized

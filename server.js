@@ -13,6 +13,7 @@ var expressValidator = require('express-validator');
 //controllers
 let user = require('./controllers/user');
 let game = require('./controllers/game');
+let play = require('./controllers/play');
 
 dotenv.load();
 let app = express();
@@ -29,9 +30,9 @@ app.use(expressValidator());
 app.use(compression());//gzip compression
 
 //routes
-app.get('/', function (req, res) {
+/*app.get('/', function (req, res) {
     res.send('Hello World!');
-});
+});*/
 //user
 app.get('/users/', user.list);
 app.get('/users/:id', user.get);
@@ -40,6 +41,11 @@ app.post('/users/', user.post);
 app.get('/games/', game.list);
 app.get('/games/:id', game.get);
 app.post('/games/', game.post);
+//plays
+app.get('/users/:userId/plays/', play.userMiddleware, play.list);
+app.get('/users/:userId/plays/:id', play.userMiddleware, play.get);
+app.post('/users/:userId/plays/', play.userMiddleware, play.post);
+
 
 
 app.listen(app.get('port'), function() {

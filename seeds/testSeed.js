@@ -23,6 +23,10 @@ exports.seed = function(knex, Promise) {
 
         //games
         //TODO insert a base64 sample
-        knex('games').insert({id: 1, name: 'test', json_designers: JSON.stringify(['test1', 'test2']), cover:'aaa', created_at: Date.now(), updated_at: Date.now()})
+        knex('games').insert({id: 1, name: 'test', json_designers: JSON.stringify(['test1', 'test2']), cover:'aaa', created_at: Date.now(), updated_at: Date.now()}),
+
+        //playesames
+        //TODO insert a base64 sample
+        knex('plays').insert({id: 1, name: 'test', user_id:1, game_id: 1, json_additional_data: JSON.stringify([{winner: 1}]), played_at: Date.now(), created_at: Date.now(), updated_at: Date.now()})
     );
 };
