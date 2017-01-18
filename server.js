@@ -48,7 +48,6 @@ app.post('/users/:userId/plays/', play.userMiddleware, play.post);
 
 //errors
 let notImplemented = (req, res, next) =>{
-    console.log(req.method);
     res.status(405).send(`Cannot ${req.method} ${req.url}`);
 };
 
