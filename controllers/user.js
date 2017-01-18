@@ -15,7 +15,7 @@ exports.list = (req, res, next)=>{
     let search = req.query.search || '%';
 
     //retrieve
-    User.forge()
+    return User.forge()
         .query(wb=>
             wb.where('name', 'LIKE', search)
             .orWhere('email', 'LIKE', search)
@@ -30,11 +30,15 @@ exports.list = (req, res, next)=>{
 };
 
 exports.get = (req, res, next)=>{
-    new User({id: req.params.id}).fetch()
-        .then(data=>res.send(data.toJSON()))
+    return new User({id: req.params.id}).fetch()
+        .then(data=>{
+            if(!data)
+                return res.status(404).send({msg: "User not found"});
+            res.send(data.toJSON());
+        })
         .catch(err=>{
-            //TODO check reason
-            res.status(404).send({msg: "User not found"})
+            console.error(err);
+            res.status(500).send({msg: "Internal server Error"});
         })
 };
 
@@ -51,7 +55,7 @@ exports.post = (req, res, next)=>{
         return res.status(422).send(errors);
     }
 
-    new User({
+    return new User({
         name: req.body.name,
         email: req.body.email,
         password: req.body.password

@@ -15,7 +15,7 @@ exports.list = (req, res, next)=>{
     let search = req.query.search || '%';
 
     //retrieve
-    Game.forge()
+    return Game.forge()
         .query(wb=>
             wb.where('name', 'LIKE', search)
             .orWhere('designers', 'LIKE', search)
@@ -30,11 +30,15 @@ exports.list = (req, res, next)=>{
 };
 
 exports.get = (req, res, next)=>{
-    new Game({id: req.params.id}).fetch()
-        .then(data=>res.send(data.toJSON()))
+    return new Game({id: req.params.id}).fetch()
+        .then(data=>{
+            if(!data)
+                return res.status(404).send({msg: "Game not found"});
+            res.send(data.toJSON())
+        })
         .catch(err=>{
-            //TODO check reason
-            res.status(404).send({msg: "Game not found"})
+            console.error(err);
+            res.status(500).send({msg: "Internal server Error"});
         })
 };
 
@@ -49,7 +53,7 @@ exports.post = (req, res, next)=>{
         return res.status(422).send(errors);
     }
 
-    new Game({
+    return new Game({
         name: req.body.name,
         designers: req.body.designers,
         cover: req.body.cover
