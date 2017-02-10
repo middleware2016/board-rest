@@ -58,7 +58,7 @@ exports.post = (req, res, next)=>{
         designers: req.body.designers,
         cover: req.body.cover
     }).save()
-        .then(data=>res.send(data.toJSON()))
+        .then(data=>res.status(201).send(data.toJSON()))
         .catch((err) => {
             console.error(err);
             res.status(500).send({msg: "Internal server Error"});

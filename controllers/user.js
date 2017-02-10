@@ -60,7 +60,7 @@ exports.post = (req, res, next)=>{
         email: req.body.email,
         password: req.body.password
     }).save()
-        .then(data=>res.send(data.toJSON()))
+        .then(data=>res.status(201).send(data.toJSON()))
         .catch((err) => {
             if (err.code === 'ER_DUP_ENTRY' || err.code == '23505' || err.code == 'SQLITE_CONSTRAINT') {
                 return res.status(422).send({ msg: 'The name/email you have entered is already associated with another account.' });

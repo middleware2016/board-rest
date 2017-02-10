@@ -82,7 +82,7 @@ exports.post = (req, res, next)=>{
                 additional_data: req.body.additional_data,
                 played_at: req.body.played_at,
                 game_id: req.body.game_id,
-            }).then(data=>res.send(data.toJSON()));
+            }).then(data=>res.status(201).send(data.toJSON()));
         })
         .catch(err=>{
             console.error(err);
