@@ -1,7 +1,7 @@
 const request = require('supertest');
 const assert = require('assert');
-// var config = require('../knexfile');
-// var knex = require('knex')(config);
+var config = require('../knexfile');
+var knex = require('knex')(config);
 const app = require('../server.js');
 
 describe('User', function() {
@@ -27,14 +27,30 @@ describe('User', function() {
         done();
     });
 
-    describe('GET /users', function() {
-        // Not working for some reason
+    describe('Create and delete user', function() {
         it('Gets the list of users', function(done) {
             request(app)
-            .get('/users')
-            .set('Accept', 'application/json')
-            .expect('Content-Type', /html/)
-            .expect(200, done);
+            .post('/users')
+            .send({ name: 'Prova', email: 'prova@gmail.com', password: 'lofggdfl' })
+            .expect(201)
+            .then(() => { return
+                request(app)
+                .get('/users/1')
+                .set('Accept', 'application/json')
+                .expect('Content-Type', /json/)
+                .expect(200, function(res) {
+                    res.body.name = 'Provaa';
+                    console.log(res.body); // not working
+                })
+            })
+            .then(() => { return
+                request(app)
+                .delete('/users/1')
+                .expect(200)
+            })
+            .then(done);
+
+
         });
     });
 });
