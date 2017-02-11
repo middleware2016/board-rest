@@ -47,7 +47,8 @@ describe('User', function() {
                 .delete('/users/1')
                 .expect(200)
             })
-            .then(done);
+            .then(done)
+            .catch(done);
 
 
         });
