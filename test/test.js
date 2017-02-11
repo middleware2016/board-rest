@@ -3,6 +3,7 @@ const assert = require('assert');
 var config = require('../knexfile');
 var knex = require('knex')(config);
 const app = require('../server.js');
+var requestInstance =  request(app);
 
 describe('User', function() {
     // Knex conflicting on SQLite
@@ -14,9 +15,9 @@ describe('User', function() {
     });
 
     beforeEach(function(done) {
-        // knex.migrate.latest(config).then(function() {
-        //     done();
-        // });
+/*         knex.migrate.latest(config).then(function() {
+             done();
+        });*/
         done();
     });
 
@@ -28,28 +29,30 @@ describe('User', function() {
     });
 
     describe('Create and delete user', function() {
-        it('Gets the list of users', function(done) {
-            request(app)
+        it('Gets the list of users', function() {
+            var t =  requestInstance
             .post('/users')
             .send({ name: 'Prova', email: 'prova@gmail.com', password: 'lofggdfl' })
-            .expect(201)
-            .then(() => { return
-                request(app)
+            .expect(201);
+            return new Promise((resolve, reject)=>t.then(resolve).catch(reject))
+            .then((data) => {
+                var t = requestInstance
                 .get('/users/1')
                 .set('Accept', 'application/json')
                 .expect('Content-Type', /json/)
-                .expect(200, function(res) {
-                    assert(res.body.name, 'QUESTO È SBAGLIATO!! E NON FALLISCE!!!')
-                })
+                .expect(200,{
+                    id: 'some fixed id',
+                    name: 'TOBI'
+                });
+                return new Promise((resolve, reject)=>t.then(resolve).catch(reject));
             })
-            .then(() => { return
-                request(app)
+            .then((data) => {
+                var t =
+                requestInstance
                 .delete('/users/1')
-                .expect(200)
-            })
-            .then(done)
-            .catch(done);
-
+                .expect(200);
+                return new Promise((resolve, reject)=>t.then(resolve).catch(reject));
+            });
 
         });
     });
