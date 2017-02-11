@@ -11,8 +11,8 @@ dotenv.load();
 pg.defaults.ssl = true;
 if(process.env.DATABASE_URL){
     module.exports = {
-        client: 'pg',
-        connection: process.env.DATABASE_URL+'?ssl=true'
+        client: 'mysql',
+        connection: process.env.DATABASE_URL
     };
 }else {
     module.exports = {
