@@ -39,8 +39,7 @@ describe('User', function() {
                 .set('Accept', 'application/json')
                 .expect('Content-Type', /json/)
                 .expect(200, function(res) {
-                    res.body.name = 'Provaa';
-                    console.log(res.body); // not working
+                    assert(res.body.name, 'QUESTO È SBAGLIATO!! E NON FALLISCE!!!')
                 })
             })
             .then(() => { return
