@@ -30,14 +30,10 @@ exports.list = (req, res, next)=>{
     let search = req.query.search || '%';
 
     //retrieve
-    return req.user.related('plays')
-        .query(wb=>
-            wb.where('name', 'LIKE', search)
-            .orWhere('additional_data', 'LIKE', search)
-        )
-        .orderBy(order, orderType)
-        .fetch()
-        .then(data=>res.send(data.toJSON()))
+    return req.user.fetch({withRelated:[
+        { plays: (query)=> query.where('name', 'LIKE', search).orWhere('json_additional_data', 'LIKE', search).orderBy(order, orderType)}
+        ]})
+        .then(data=>res.send(data.related('plays').toJSON()))
         .catch(err=>{
             console.error(err);
             res.status(500).send({msg: "Internal server Error"});
