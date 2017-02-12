@@ -100,6 +100,10 @@ class UserTest(RestTest):
         res = requests.post('{}/users'.format(BASE_URL), json = {'name':'same_name', 'email': 'same_name2@test.com', 'password': '12345'})
         self.assertEqual(res.status_code, 422)
 
+    def test_get_non_existing_user(self):
+        res = requests.get('{}/users/-1'.format(BASE_URL))
+        self.assertEqual(res.status_code, 404)
+
 
 
 class GameTest(RestTest):
@@ -149,6 +153,7 @@ class PlayTest(RestTest):
 
         # Check list of plays
         res = requests.get('{}/users/{}/plays'.format(BASE_URL, PlayTest.user_id))
+        print(res.url)
         print(res.text)
         self.assertEqual(res.status_code, 200)
         # Should only return one play, for the current user
@@ -174,6 +179,11 @@ class PlayTest(RestTest):
         self.assertEqual(res.status_code, 422)
         self.assertEqual(res.json()[0]['param'], 'game_id')
 
+    def test_get_non_existing_play(self):
+        res = requests.get('{}/users/{}/plays/-1'.format(BASE_URL, PlayTest.user_id))
+        self.assertEqual(res.status_code, 404)
+
+    # TODO: test the search by game name and date of play
 
 if __name__ == '__main__':
     unittest.main()
