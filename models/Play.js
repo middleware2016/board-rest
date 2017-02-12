@@ -43,6 +43,14 @@ let Play = bookshelf.Model.extend({
                     throw e;
                 }
             }
+        },
+
+        links: function() {
+            return [
+                {'rel': 'self', 'href': '/plays/' + this.get('id')},
+                {'rel': 'user', 'href': '/users/' + this.get('user_id')},
+                {'rel': 'game', 'href': '/games/' + this.get('game_id')},
+            ];
         }
     },
 });

@@ -40,8 +40,15 @@ let Game = bookshelf.Model.extend({
                     throw e;
                 }
             }
+        },
+
+        links: function() {
+            return [
+                {'rel': 'self', 'href': '/games/' + this.get('id')},
+            ];
         }
     },
+
 });
 
 module.exports = bookshelf.model('Game', Game);
