@@ -146,9 +146,16 @@ class PlayTest(RestTest):
                                 'played_at': PlayTest.timestamp,
                                 'game_id': PlayTest.game_id})
         self.assertEqual(res.status_code, 201)
-        play_id = str(res.json()['id'])
 
-        # Check the play
+        # Check list of plays
+        res = requests.get('{}/users/{}/plays'.format(BASE_URL, PlayTest.user_id))
+        print(res.text)
+        self.assertEqual(res.status_code, 200)
+        # Should only return one play, for the current user
+        self.assertEqual(len(res.json()), 1)
+        play_id = str(res.json()[0]['id'])
+
+        # Check the play, accessed directly
         res = requests.get('{}/users/{}/plays/{}'.format(BASE_URL, PlayTest.user_id, play_id))
         self.assertEqual(res.status_code, 200)
         self.assertEqual(res.json()['additional_data'], {'a': 'b'})
