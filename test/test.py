@@ -181,7 +181,7 @@ class PlayTest(RestTest):
         res = requests.get('{}/users/{}/plays/-1'.format(BASE_URL, PlayTest.user_id))
         self.assertEqual(res.status_code, 404)
 
-    def test_search_plays_by_gameid_asc(self):
+    def test_search_plays_by_gameid(self):
         # Create a new user
         res = requests.post('{}/users'.format(BASE_URL), json = {'name':'u1', 'email': 'u1@test.com', 'password': '12345'})
         u1_id = res.json()['id']
@@ -196,7 +196,7 @@ class PlayTest(RestTest):
             # Create a play for each game
             res = requests.post('{}/users/{}/plays'.format(BASE_URL, u1_id),
                                 json = {
-                                    'name': 'u1',
+                                    'name': 'Play{}'.format(i),
                                     'additional_data': {'a': 'b'},
                                     'played_at': PlayTest.timestamp + i * 10,
                                     'game_id': game_ids[i]})
@@ -206,6 +206,7 @@ class PlayTest(RestTest):
             '{}/users/{}/plays'.format(BASE_URL, u1_id),
             params={'order': 'game_id', 'order_type': 'desc'})
         self.assertEqual(res.status_code, 200)
+        self.assertEqual(len(res.json()), num_plays)
         for i in range(len(res.json())-1):
             self.assertGreater(res.json()[i]['game_id'], res.json()[i+1]['game_id'])
 
@@ -214,6 +215,7 @@ class PlayTest(RestTest):
             '{}/users/{}/plays'.format(BASE_URL, u1_id),
             params={'order': 'game_id', 'order_type': 'asc'})
         self.assertEqual(res.status_code, 200)
+        self.assertEqual(len(res.json()), num_plays)
         for i in range(len(res.json())-1):
             self.assertLess(res.json()[i]['game_id'], res.json()[i+1]['game_id'])
 
