@@ -8,10 +8,13 @@ let Play = require('../models/Play');
 
 exports.userMiddleware = (req, res, next) => {
     return new User({id: req.params.userId}).fetch().then((user)=>{
+        if(!user)
+            return res.status(404).send({ msg: 'Wrong user id' });
         req.user = user;
         next();
     }).catch(()=>{
-        res.status(404).send({ msg: 'Wrong user id' });
+        console.error(err);
+        res.status(500).send({msg: "Internal server Error"});
     });
 };
 

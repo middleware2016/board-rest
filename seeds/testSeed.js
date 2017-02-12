@@ -19,7 +19,10 @@ exports.seed = function(knex, Promise) {
                 });
             })
         }).then(function(hash){
-            return knex('users').insert({id: 1, name: 'test', email:'test@test.com', password:hash, created_at: Date.now(), updated_at: Date.now()});
+            return Promise.all([
+                knex('users').insert({id: 1, name: 'test', email:'test@test.com', password:hash, created_at: Date.now(), updated_at: Date.now()}),
+                knex('users').insert({id: 2, name: 'test2', email:'test2@test.com', password:hash, created_at: Date.now(), updated_at: Date.now()})
+                ]);
         }),
 
         //games
@@ -28,6 +31,7 @@ exports.seed = function(knex, Promise) {
 
         //playesames
         //TODO insert a base64 sample
-        knex('plays').insert({id: 1, name: 'test', user_id:1, game_id: 1, json_additional_data: JSON.stringify([{winner: 1}]), played_at: Date.now(), created_at: Date.now(), updated_at: Date.now()})
+        knex('plays').insert({id: 1, name: 'test', user_id:1, game_id: 1, json_additional_data: JSON.stringify([{winner: 1}]), played_at: Date.now(), created_at: Date.now(), updated_at: Date.now()}),
+        knex('plays').insert({id: 2, name: 'test2', user_id:2, game_id: 1, json_additional_data: JSON.stringify([{winner: 1}]), played_at: Date.now(), created_at: Date.now(), updated_at: Date.now()})
     );
 };
