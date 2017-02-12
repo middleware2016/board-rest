@@ -47,10 +47,10 @@ let User = bookshelf.Model.extend({
 
     virtuals: {
         links: function() {
-            return [
-                {'rel': 'self', 'href': '/users/' + this.get('id')},
-                {'rel': 'plays', 'href': '/users/' + this.get('id') + '/plays'}
-            ];
+            return {
+                'self': '/users/' + this.get('id'),
+                'plays': '/users/' + this.get('id') + '/plays',
+            };
         }
     }
 });

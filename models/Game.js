@@ -43,9 +43,9 @@ let Game = bookshelf.Model.extend({
         },
 
         links: function() {
-            return [
-                {'rel': 'self', 'href': '/games/' + this.get('id')},
-            ];
+            return {
+                'self': '/games/' + this.get('id'),
+            };
         }
     },
 
