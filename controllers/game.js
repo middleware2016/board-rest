@@ -18,7 +18,7 @@ exports.list = (req, res, next)=>{
     return Game.forge()
         .query(wb=>
             wb.where('name', 'LIKE', search)
-            .orWhere('designers', 'LIKE', search)
+            .orWhere('json_designers', 'LIKE', search)
         )
         .orderBy(order, orderType)
         .fetchAll()
