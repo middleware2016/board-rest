@@ -46,11 +46,18 @@ let Play = bookshelf.Model.extend({
         },
 
         links: function() {
-            return {
+            var links = {
                 'self': '/users/' + this.get('user_id') + '/plays/' + this.get('id'),
                 'user': '/users/' + this.get('user_id'),
                 'game': '/games/' + this.get('game_id'),
             };
+            for(let datum of this.get('additional_data')) {
+                if('winner' in datum) {
+                    links['winner'] = '/users/' + datum['winner'];
+                    break;
+                }
+            }
+            return links;
         }
     },
 });
