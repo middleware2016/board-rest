@@ -11,7 +11,7 @@ A service that can help people keep track of their board games nights, with a RE
 `npm start`
 
 ## Tests
-The tests require Python 3 and the `requests` library.
+The tests require Python 2 or 3 and the `requests` library.
 
 * To install requests: `pip install requests`
 * To run the tests: `python test/test.py --verbose`

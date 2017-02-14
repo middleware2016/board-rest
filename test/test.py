@@ -3,10 +3,10 @@
 """
 How to run the tests:
     cd test
-    python3 -m unittest test
+    python -m unittest test
 
 Requirements:
-    * Python 3
+    * Python 2 or 3
     * Requests: http://docs.python-requests.org/en/master/
 """
 
@@ -14,6 +14,7 @@ import requests
 import unittest
 import subprocess
 import datetime
+import os
 
 BASE_URL = 'http://localhost:3000'
 
@@ -21,7 +22,8 @@ class RestTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         # Reset database
-        subprocess.call(["npm", "run", "seeds"], stdout=subprocess.DEVNULL)
+        with open(os.devnull, 'w') as devnull:
+            subprocess.call(["npm", "run", "seeds"], stdout=devnull)
 
 class UserTest(RestTest):
     # Before and after each test, delete all the users.
@@ -127,7 +129,7 @@ class PlayTest(RestTest):
 
     user_id = None
     game_id = None
-    timestamp = int(datetime.datetime.now().timestamp())
+    timestamp = int(datetime.datetime.now().strftime("%s"))
 
     @classmethod
     def setUpClass(cls):
