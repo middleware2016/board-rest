@@ -5,8 +5,7 @@
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "seeds": "node node_modules/knex/bin/cli.js migrate:latest & node node_modules/knex/bin/cli.js seed:run",
-    "test": "mocha"
+    "seeds": "node node_modules/knex/bin/cli.js migrate:latest & node node_modules/knex/bin/cli.js seed:run"
   },
   "repository": {
     "type": "git",
@@ -32,9 +31,5 @@
     "morgan": "^1.7.0",
     "pg": "^6.1.2",
     "sqlite3": "^3.1.8"
-  },
-  "devDependencies": {
-    "mocha": "^3.2.0",
-    "supertest": "^3.0.0"
   }
 }
