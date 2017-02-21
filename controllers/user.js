@@ -134,6 +134,9 @@ exports.put = (req, res, next)=>{
 };
 
 exports.delete = (req, res, next)=>{
+    if (req.user.get('role') != 'power' && req.user.get('id') != req.params.id)
+        return res.status(403).send({msg: "You are not authorized to modify this user"});
+
     return new User({id: req.params.id}).fetch()
         .then(data=>{
             if(!data)

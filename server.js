@@ -11,6 +11,8 @@ var bodyParser = require('body-parser');
 var expressValidator = require('express-validator');
 var jwt = require('jsonwebtoken');
 let User = require('./models/User');
+let config = require('./knexfile');
+let knex = require('knex')(config);
 
 //controllers
 let user = require('./controllers/user');
@@ -71,7 +73,7 @@ app.get('/users/', user.list);
 app.get('/users/:id', user.get);
 app.post('/users/', user.post);
 app.put('/users/:id', ensureAuthenticated, user.put);
-app.delete('/users/:id', user.delete);
+app.delete('/users/:id', ensureAuthenticated, user.delete);
 app.post('/users/login', user.login);
 //games
 app.get('/games/', game.list);
@@ -81,6 +83,14 @@ app.post('/games/', ensureAuthenticated, game.post);
 app.get('/users/:userId/plays/', play.userMiddleware, play.list);
 app.get('/users/:userId/plays/:id', play.userMiddleware, play.get);
 app.post('/users/:userId/plays/', ensureAuthenticated, play.userMiddleware, play.post); //TODO fix ensureAuthenticated when oAUTH will be used
+
+app.delete('/clean', (req, res, next)=>{
+    Promise.all([
+        knex('users').del(),
+        knex('games').del(),
+        knex('plays').del()
+    ]).then(()=>res.send('OK'));
+});
 
 //errors
 let notImplemented = (req, res, next) =>{
