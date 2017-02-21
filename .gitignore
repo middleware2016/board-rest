@@ -132,3 +132,4 @@ jspm_packages
 
 ### CUSTOM ###
 *.sqlite3
+.env

@@ -15,3 +15,5 @@ A service that can help people keep track of their board games nights, with a RE
 ### To create migrations
 1. Install knex globally: `npm install -g knex`
 2. Type `knex migrate:make NAME`
+### To send auth token
+Set header "Authorization" = "Bearer + JWTTOKEN"

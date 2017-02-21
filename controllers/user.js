@@ -3,6 +3,18 @@
  */
 "use strict";
 let User = require('../models/User');
+let moment = require('moment');
+var jwt = require('jsonwebtoken');
+
+function generateToken(user) {
+    var payload = {
+        iss: process.env.DOMAIN,
+        sub: user.id,
+        iat: moment().unix(),
+        exp: moment().add(7, 'days').unix()
+    };
+    return jwt.sign(payload, process.env.TOKEN_SECRET);
+}
 
 exports.list = (req, res, next)=>{
     //order
@@ -110,4 +122,32 @@ exports.delete = (req, res, next)=>{
             console.error(err);
             res.status(500).send({msg: "Internal server Error"});
         })
+};
+
+exports.login = (req, res, next) => {
+    req.assert('email', 'Email is not valid').isEmail();
+    req.assert('email', 'Email cannot be blank').notEmpty();
+    req.assert('password', 'Password cannot be blank').notEmpty();
+    req.sanitize('email').normalizeEmail({ remove_dots: false });
+
+    let errors = req.validationErrors();
+
+    if (errors) {
+        return res.status(422).send(errors);
+    }
+
+    let errorMex = ()=>res.status(401).send({ msg: 'Invalid email or password' });
+    new User({ email: req.body.email })
+        .fetch()
+        .then(user => {
+            if (!user) {
+                return errorMex();
+            }
+            user.comparePassword(req.body.password, (err, isMatch) => {
+                if (!isMatch) {
+                    return errorMex();
+                }
+                return res.send({ token: generateToken(user), user: user.toJSON()});
+            });
+        });
 };

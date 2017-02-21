@@ -9,6 +9,8 @@ let moment = require('moment');//keep even if it is not used directly
 var compression = require('compression');
 var bodyParser = require('body-parser');
 var expressValidator = require('express-validator');
+var jwt = require('jsonwebtoken');
+let User = require('./models/User');
 
 //controllers
 let user = require('./controllers/user');
@@ -21,6 +23,31 @@ let app = express();
 //config defaults
 //post body limit
 let requestLimit = process.env.REQUEST_LIMIT || 1024*1024*50; //50MB limit
+
+//authentication
+app.use(function(req, res, next) {
+    req.isAuthenticated = function() {
+        let token = (req.headers.authorization && req.headers.authorization.split(' ')[1]);// || req.cookies.token;
+        try {
+            return jwt.verify(token, process.env.TOKEN_SECRET);
+        } catch (err) {
+            return false;
+        }
+    };
+
+    if (req.isAuthenticated()) {
+        let payload = req.isAuthenticated();
+        new User({ id: payload.sub })
+            .fetch()
+            .then(function(user) {
+                req.user = user;
+                next();
+            });
+    } else {
+        next();
+    }
+});
+
 
 app.set('port', process.env.PORT || 3000);
 app.use(logger('dev'));
@@ -39,6 +66,7 @@ app.get('/users/:id', user.get);
 app.post('/users/', user.post);
 app.put('/users/:id', user.put);
 app.delete('/users/:id', user.delete);
+app.post('/users/login', user.login);
 //games
 app.get('/games/', game.list);
 app.get('/games/:id', game.get);
