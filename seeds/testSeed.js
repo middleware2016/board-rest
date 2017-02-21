@@ -20,7 +20,7 @@ exports.seed = function(knex, Promise) {
             })
         }).then(function(hash){
             return Promise.all([
-                knex('users').insert({id: 1, name: 'test', email:'test@test.com', password:hash, created_at: Date.now(), updated_at: Date.now()}),
+                knex('users').insert({id: 1, name: 'test', email:'test@test.com', password:hash, created_at: Date.now(), updated_at: Date.now(), role:'power'}),
                 knex('users').insert({id: 2, name: 'test2', email:'test2@test.com', password:hash, created_at: Date.now(), updated_at: Date.now()})
                 ]);
         }),
