@@ -67,6 +67,9 @@ exports.post = (req, res, next)=>{
         return res.status(422).send(errors);
     }
 
+    if (req.user.get('role') != 'power' && req.user.get('id') != req.params.id)
+        return res.status(403).send({msg: "You are not authorized to create plays"});
+
     return new Game({id: req.body.game_id}).fetch()
         .then(data=>{
             if(!data)

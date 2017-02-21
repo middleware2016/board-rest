@@ -25,8 +25,8 @@ let app = express();
 let requestLimit = process.env.REQUEST_LIMIT || 1024*1024*50; //50MB limit
 
 //authentication
-app.use(function(req, res, next) {
-    req.isAuthenticated = function() {
+app.use((req, res, next) => {
+    req.isAuthenticated = () => {
         let token = (req.headers.authorization && req.headers.authorization.split(' ')[1]);// || req.cookies.token;
         try {
             return jwt.verify(token, process.env.TOKEN_SECRET);
@@ -47,7 +47,13 @@ app.use(function(req, res, next) {
         next();
     }
 });
-
+let ensureAuthenticated = (req, res, next) => {
+    if (req.isAuthenticated()) {
+        next();
+    } else {
+        res.status(401).send({ msg: 'Unauthorized' });
+    }
+};
 
 app.set('port', process.env.PORT || 3000);
 app.use(logger('dev'));
@@ -64,17 +70,17 @@ app.use(compression());//gzip compression
 app.get('/users/', user.list);
 app.get('/users/:id', user.get);
 app.post('/users/', user.post);
-app.put('/users/:id', user.put);
+app.put('/users/:id', ensureAuthenticated, user.put);
 app.delete('/users/:id', user.delete);
 app.post('/users/login', user.login);
 //games
 app.get('/games/', game.list);
 app.get('/games/:id', game.get);
-app.post('/games/', game.post);
+app.post('/games/', ensureAuthenticated, game.post);
 //plays
 app.get('/users/:userId/plays/', play.userMiddleware, play.list);
 app.get('/users/:userId/plays/:id', play.userMiddleware, play.get);
-app.post('/users/:userId/plays/', play.userMiddleware, play.post);
+app.post('/users/:userId/plays/', ensureAuthenticated, play.userMiddleware, play.post); //TODO fix ensureAuthenticated when oAUTH will be used
 
 //errors
 let notImplemented = (req, res, next) =>{

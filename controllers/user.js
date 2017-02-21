@@ -88,22 +88,44 @@ exports.put = (req, res, next)=>{
     req.assert('email', 'Email cannot be blank').notEmpty();
     req.assert('password', 'Password must be at least 4 characters long').len(4);
     req.sanitize('email').normalizeEmail({ remove_dots: false });
+    let errors = req.validationErrors();
 
-    var errors = req.validationErrors();
+    let role = null;
+    if(req.body.role){
+        if(req.body.role != 'normal' && req.body.role != 'power') {
+            if(!errors)
+                errors = [];
+            errors.push({
+                "param": "role",
+                "msg": "Role should be equal to 'normal' or 'power'"
+            });
+        } else if(req.user.get('role') == 'power')
+            return res.status(403).send({msg: "You are not authorized to modify role"});
+        else
+            role = req.body.role;
+    }
 
     if (errors) {
         return res.status(422).send(errors);
     }
 
+    if (req.user.get('role') != 'power' && req.user.get('id') != req.params.id)
+        return res.status(403).send({msg: "You are not authorized to modify this user"});
+
+    let dataToSet = {
+        name: req.body.name,
+        email: req.body.email,
+        password: req.body.password
+    };
+
+    if (role)
+        dataToSet.role = role;
+
     return new User({id: req.params.id}).fetch()
         .then(data=>{
             if(!data)
                 return res.status(404).send({msg: "User not found"});
-            return data.save({
-                name: req.body.name,
-                email: req.body.email,
-                password: req.body.password
-            }).then(data=>res.send(data.toJSON()))
+            return data.save(dataToSet).then(data=>res.send(data.toJSON()))
         })
         .catch((err) => {
             console.error(err);
