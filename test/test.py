@@ -3,10 +3,10 @@
 """
 How to run the tests:
     cd test
-    python3 -m unittest test
+    python -m unittest test
 
 Requirements:
-    * Python 3
+    * Python 2 or 3
     * Requests: http://docs.python-requests.org/en/master/
 """
 
@@ -22,7 +22,8 @@ class RestTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         # Reset database
-        subprocess.call(["npm", "run", "seeds"], stdout=subprocess.DEVNULL)
+        with open(os.devnull, 'w') as devnull:
+            subprocess.call(["npm", "run", "seeds"], stdout=devnull)
 
 class UserTest(RestTest):
     # Before and after each test, delete all the users.
@@ -127,7 +128,7 @@ class GameTest(RestTest):
         self.assertEqual(res.status_code, 401)
         
         # Login no power
-        res = requests.post('{}/users/login'.format(BASE_URL), json = {'email': 'test2@test.com', 'password': 'test'})
+        res = requests.post('{}/users/login'.format(BASE_URL), json = {'email': 'testuser2@test.com', 'password': 'test'})
         self.assertEqual(res.status_code, 200)
         token = str(res.json()['token'])
         headersObj = {'Authorization':'Bearer '+token}
@@ -137,7 +138,7 @@ class GameTest(RestTest):
         self.assertEqual(res.status_code, 403)
         
         # Login power
-        res = requests.post('{}/users/login'.format(BASE_URL), json = {'email': 'test@test.com', 'password': 'test'})
+        res = requests.post('{}/users/login'.format(BASE_URL), json = {'email': 'testuser1@test.com', 'password': 'test'})
         self.assertEqual(res.status_code, 200)
         token = str(res.json()['token'])
         headersObj = {'Authorization':'Bearer '+token}
@@ -162,7 +163,7 @@ class PlayTest(RestTest):
     user_id = None
     game_id = None
     headersObj = ''
-    timestamp = int(datetime.datetime.now().timestamp())
+    timestamp = int(datetime.datetime.now().strftime("%s"))
 
     @classmethod
     def setUpClass(cls):
@@ -233,7 +234,7 @@ class PlayTest(RestTest):
         num_plays = 4
         game_ids = []
 
-        res = requests.post('{}/users/login'.format(BASE_URL), json = {'email': 'test@test.com', 'password': 'test'})
+        res = requests.post('{}/users/login'.format(BASE_URL), json = {'email': 'testuser1@test.com', 'password': 'test'})
         self.assertEqual(res.status_code, 200)
         token = str(res.json()['token'])
         PlayTest.headersObj = {'Authorization':'Bearer '+token}

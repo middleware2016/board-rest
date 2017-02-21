@@ -44,6 +44,15 @@ let User = bookshelf.Model.extend({
     },
 
     hidden: ['password'], //hide from json deserialized
+
+    virtuals: {
+        links: function() {
+            return {
+                'self': '/users/' + this.get('id'),
+                'plays': '/users/' + this.get('id') + '/plays',
+            };
+        }
+    }
 });
 
 module.exports = bookshelf.model('User', User);

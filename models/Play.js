@@ -43,6 +43,19 @@ let Play = bookshelf.Model.extend({
                     throw e;
                 }
             }
+        },
+
+        links: function() {
+            var links = {
+                'self': '/users/' + this.get('user_id') + '/plays/' + this.get('id'),
+                'user': '/users/' + this.get('user_id'),
+                'game': '/games/' + this.get('game_id'),
+            };
+            let additional_data = this.get('additional_data');
+            if('winner' in additional_data) {
+                links['winner'] = '/users/' + additional_data['winner'];
+            }
+            return links;
         }
     },
 });
