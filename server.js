@@ -50,7 +50,7 @@ app.use((req, res, next) => {
     }
 });
 let ensureAuthenticated = (req, res, next) => {
-    if (req.isAuthenticated()) {
+    if (req.isAuthenticated() && req.user) {
         next();
     } else {
         res.status(401).send({ msg: 'Unauthorized' });
@@ -82,7 +82,7 @@ app.post('/games/', ensureAuthenticated, game.post);
 //plays
 app.get('/users/:userId/plays/', play.userMiddleware, play.list);
 app.get('/users/:userId/plays/:id', play.userMiddleware, play.get);
-app.post('/users/:userId/plays/', ensureAuthenticated, play.userMiddleware, play.post); //TODO fix ensureAuthenticated when oAUTH will be used
+app.post('/users/:userId/plays/', ensureAuthenticated, play.userMiddleware, play.post);
 
 app.delete('/clean', (req, res, next)=>{
     Promise.all([
