@@ -28,8 +28,20 @@ class RestTest(unittest.TestCase):
 class UserTest(RestTest):
     # Before and after each test, delete all the users.
 
+    def loginAs(self, email, password):
+        """Return the headers"""
+        res = requests.post('{}/users/login'.format(BASE_URL), json = {'email': email, 'password': password})
+        token = str(res.json()['token'])
+        return {'Authorization':'Bearer '+token}
+
     def setUp(self):
         self.delete_all()
+        # Creating user
+        res = requests.post('{}/users'.format(BASE_URL), json = {'name':'initial', 'email': 'initial@middleware.polimi', 'password': '12345'})
+        self.initial_user_id = str(res.json()['id'])
+
+        # Login with that user
+        self.headersObj = self.loginAs('initial@middleware.polimi', '12345')
 
     def tearDown(self):
         self.delete_all()
@@ -39,49 +51,50 @@ class UserTest(RestTest):
         res = requests.delete('{}/clean'.format(BASE_URL))
         self.assertEqual(res.status_code, 200)
 
-    def test_user_life(self):
+    def test_user_creation(self):
         # Creating user
         res = requests.post('{}/users'.format(BASE_URL), json = {'name':'pietro', 'email': 'pietro@middleware.polimi', 'password': '12345'})
         self.assertEqual(res.status_code, 201)
         user_id = str(res.json()['id'])
-        
-        # Login
-        res = requests.post('{}/users/login'.format(BASE_URL), json = {'email': 'pietro@middleware.polimi', 'password': '12345'})
-        self.assertEqual(res.status_code, 200)
-        token = str(res.json()['token'])
-        headersObj = {'Authorization':'Bearer '+token}
 
         # Checking user
         res = requests.get('{}/users/{}'.format(BASE_URL, user_id))
         self.assertEqual(res.status_code, 200)
         self.assertEqual(res.json()['name'], 'pietro')
 
+    def test_put_user_without_auth(self):
         # Doing a PUT without auth
-        res = requests.put('{}/users/{}'.format(BASE_URL, user_id), json = {'name':'pietro', 'email': 'new@email.com', 'password': '12345'})
+        res = requests.put('{}/users/{}'.format(BASE_URL, self.initial_user_id), json = {'name':'pietro', 'email': 'new@email.com', 'password': '12345'})
         self.assertEqual(res.status_code, 401)
 
+    def test_put_user_with_auth(self):
         # Doing a PUT with auth
-        res = requests.put('{}/users/{}'.format(BASE_URL, user_id), json = {'name':'pietro', 'email': 'new@email.com', 'password': '12345'}, headers = headersObj)
+        res = requests.put('{}/users/{}'.format(BASE_URL, self.initial_user_id), json = {'name':'pietro', 'email': 'new@email.com', 'password': '12345'}, headers = self.headersObj)
         self.assertEqual(res.status_code, 200)
         self.assertEqual(res.json()['email'], 'new@email.com')
 
-        # Deleting user without auth
-        res = requests.delete('{}/users/{}'.format(BASE_URL, user_id))
-        self.assertEqual(res.status_code, 401)
-
+    def test_delete_own_with_auth(self):
+        # Creating user
+        res = requests.post('{}/users'.format(BASE_URL), json = {'name':'to_delete', 'email': 'delete@middleware.polimi', 'password': '12345'})
+        self.assertEqual(res.status_code, 201)
+        user_id = str(res.json()['id'])
+        uHeaders = self.loginAs('delete@middleware.polimi', '12345')
         # Deleting user with auth
-        res = requests.delete('{}/users/{}'.format(BASE_URL, user_id), headers = headersObj)
+        res = requests.delete('{}/users/{}'.format(BASE_URL, user_id), headers = uHeaders)
         self.assertEqual(res.status_code, 200)
-
         # Checking user
         res = requests.get('{}/users/{}'.format(BASE_URL, user_id))
         self.assertEqual(res.status_code, 404)
+
+    def test_delete_without_auth(self):
+        res = requests.delete('{}/users/{}'.format(BASE_URL, self.initial_user_id))
+        self.assertEqual(res.status_code, 401)
 
     def test_user_list(self):
         # Checking the list of users
         res = requests.get('{}/users'.format(BASE_URL))
         self.assertEqual(res.status_code, 200)
-        self.assertEqual(len(res.json()), 0)
+        self.assertEqual(len(res.json()), 1)
 
         # Creating two users
         for i in range(2):
@@ -91,7 +104,7 @@ class UserTest(RestTest):
         # Checking the list of users
         res = requests.get('{}/users'.format(BASE_URL))
         self.assertEqual(res.status_code, 200)
-        self.assertEqual(len(res.json()), 2)
+        self.assertEqual(len(res.json()), 3)
 
     def test_invalid_email(self):
         res = requests.post('{}/users'.format(BASE_URL), json = {'name':'invalid_email_user', 'email': 'invalid_email', 'password': '12345'})
@@ -122,27 +135,27 @@ class UserTest(RestTest):
 class GameTest(RestTest):
     def test_game_creation(self):
         os.system('npm run seeds')
-        
+
         # Creating game without auth
         res = requests.post('{}/games'.format(BASE_URL), json = {'name':'Chess', 'designers': ['a', 'b'], 'cover': 'imagedata'})
         self.assertEqual(res.status_code, 401)
-        
+
         # Login no power
         res = requests.post('{}/users/login'.format(BASE_URL), json = {'email': 'testuser2@test.com', 'password': 'test'})
         self.assertEqual(res.status_code, 200)
         token = str(res.json()['token'])
         headersObj = {'Authorization':'Bearer '+token}
-		
+
 		# Creating game with auth (no power)
         res = requests.post('{}/games'.format(BASE_URL), json = {'name':'Chess', 'designers': ['a', 'b'], 'cover': 'imagedata'}, headers=headersObj)
         self.assertEqual(res.status_code, 403)
-        
+
         # Login power
         res = requests.post('{}/users/login'.format(BASE_URL), json = {'email': 'testuser1@test.com', 'password': 'test'})
         self.assertEqual(res.status_code, 200)
         token = str(res.json()['token'])
         headersObj = {'Authorization':'Bearer '+token}
-        
+
         # Creating game with auth (power)
         res = requests.post('{}/games'.format(BASE_URL), json = {'name':'Chess', 'designers': ['a', 'b'], 'cover': 'imagedata'}, headers=headersObj)
         self.assertEqual(res.status_code, 201)
@@ -168,12 +181,12 @@ class PlayTest(RestTest):
     @classmethod
     def setUpClass(cls):
         super(PlayTest, cls).setUpClass()
-        
+
         os.system('npm run seeds')
         # Create a new user
         res = requests.post('{}/users'.format(BASE_URL), json = {'name':'play_user', 'email': 'play_user@test.com', 'password': '12345'})
         PlayTest.user_id = res.json()['id']
-        
+
         res = requests.post('{}/users/login'.format(BASE_URL), json = {'email': 'play_user@test.com', 'password': '12345'})
         #self.assertEqual(res.status_code, 200)
         token = str(res.json()['token'])
@@ -238,7 +251,7 @@ class PlayTest(RestTest):
         self.assertEqual(res.status_code, 200)
         token = str(res.json()['token'])
         PlayTest.headersObj = {'Authorization':'Bearer '+token}
-        
+
         for i in range(num_plays):
             res = requests.post('{}/games'.format(BASE_URL), json = {'name':'G{}'.format(i), 'designers': ['a', 'b'], 'cover': 'imagedata'}, headers=PlayTest.headersObj)
             game_ids.append(res.json()['id'])
