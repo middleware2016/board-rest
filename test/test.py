@@ -26,7 +26,7 @@ class RestTest(unittest.TestCase):
             subprocess.call(["npm", "run", "seeds"], stdout=devnull)
 
 class UserTest(RestTest):
-    # Before and after each test, delete all the users.
+    # Before and after the test suite, delete all the users.
 
     @classmethod
     def loginAs(cls, email, password):
@@ -98,7 +98,7 @@ class UserTest(RestTest):
         # Login as power user
         powerHeaders = UserTest.loginAs('poweruser1@test.com', 'test')
         # Doing a PUT with auth
-        res = requests.put('{}/users/{}'.format(BASE_URL, user_id), json = {'name':'dfssadf', 'email': 'new@email.com', 'password': '12345'}, headers = powerHeaders)
+        res = requests.put('{}/users/{}'.format(BASE_URL, user_id), json = {'name':'ppou', 'email': 'ppou@email.com', 'password': '12345'}, headers = powerHeaders)
         self.assertEqual(res.status_code, 200)
 
     def test_delete_own_with_auth(self):
@@ -115,10 +115,38 @@ class UserTest(RestTest):
         res = requests.get('{}/users/{}'.format(BASE_URL, user_id))
         self.assertEqual(res.status_code, 404)
 
+    def test_power_delete(self):
+        """A power user deletes another user. Expected: 200"""
+        # Login as power user
+        powerHeaders = UserTest.loginAs('poweruser1@test.com', 'test')
+        # Create a normal user
+        res = requests.post('{}/users'.format(BASE_URL), json = {'name':'to_delete_from_power', 'email': 'to_delete_from_power@middleware.polimi', 'password': '12345'})
+        self.assertEqual(res.status_code, 201)
+        user_id = str(res.json()['id'])
+        # Nuke!
+        res = requests.delete('{}/users/{}'.format(BASE_URL, user_id), headers = powerHeaders)
+        self.assertEqual(res.status_code, 200)
+
     def test_delete_without_auth(self):
         """Anonymous user tries to delete the profile. Expected: 401"""
         res = requests.delete('{}/users/{}'.format(BASE_URL, UserTest.initial_user_id))
         self.assertEqual(res.status_code, 401)
+
+    def test_normal_privilege_escalation(self):
+        """A normal user tries to become power user. Expected: 403"""
+        res = requests.put('{}/users/{}'.format(BASE_URL, UserTest.initial_user_id), json = {'name':'updated_initial', 'email': 'updated_initial@email.com', 'password': 'secret', 'role': 'power'}, headers = UserTest.headersObj)
+        self.assertEqual(res.status_code, 403)
+
+    def test_power_promote_user(self):
+        """A power user makes another user a power user. Expected: 200"""
+        # Login as power user
+        powerHeaders = UserTest.loginAs('poweruser1@test.com', 'test')
+        # Create a normal user
+        res = requests.post('{}/users'.format(BASE_URL), json = {'name':'to_promote', 'email': 'to_promote@middleware.polimi', 'password': '12345'})
+        self.assertEqual(res.status_code, 201)
+        user_id = str(res.json()['id'])
+        res = requests.put('{}/users/{}'.format(BASE_URL, user_id), json = {'name':'to_promote', 'email': 'to_promote@email.com', 'password': 'secret', 'role': 'power'}, headers = powerHeaders)
+        self.assertEqual(res.status_code, 200)
 
     def test_user_list(self):
         # Checking the list of users

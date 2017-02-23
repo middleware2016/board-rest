@@ -99,8 +99,8 @@ exports.put = (req, res, next)=>{
                 "param": "role",
                 "msg": "Role should be equal to 'normal' or 'power'"
             });
-        } else if(req.user.get('role') == 'power')
-            return res.status(403).send({msg: "You are not authorized to modify role"});
+        } else if(req.user.get('role') != 'power')
+            return res.status(403).send({msg: "You are not authorized to modify roles"});
         else
             role = req.body.role;
     }
