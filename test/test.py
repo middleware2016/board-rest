@@ -18,7 +18,13 @@ import os
 
 BASE_URL = 'http://localhost:3000'
 
+def runSeeds():
+    """Run seeds to reset the database"""
+    with open(os.devnull, 'w') as devnull:
+        subprocess.call(["npm", "run", "seeds"], stdout=devnull)
+
 def get_options_verbs(url):
+    """Performs an OPTIONS HTTP request on the given URL and gives the list of allowed HTTP verbs."""
     res = requests.options(url)
     verbs = res.headers['Allow'].split(',')
     return verbs
@@ -26,9 +32,7 @@ def get_options_verbs(url):
 class RestTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        # Reset database
-        with open(os.devnull, 'w') as devnull:
-            subprocess.call(["npm", "run", "seeds"], stdout=devnull)
+        runSeeds()
 
 class UserTest(RestTest):
     # Before and after the test suite, delete all the users.
@@ -42,6 +46,7 @@ class UserTest(RestTest):
 
     @classmethod
     def setUpClass(cls):
+        """Creates a normal user for testing. This user should not be deleted by the tests."""
         # Creating user
         res = requests.post('{}/users'.format(BASE_URL), json = {'name':'initial', 'email': 'initial@middleware.polimi', 'password': '12345'})
         UserTest.initial_user_id = str(res.json()['id'])
@@ -55,7 +60,7 @@ class UserTest(RestTest):
 
     @classmethod
     def delete_all(cls):
-        # Deleting all existing users
+        """Delete all the existing users."""
         res = requests.delete('{}/clean'.format(BASE_URL))
 
     def test_user_creation(self):
@@ -154,6 +159,7 @@ class UserTest(RestTest):
         self.assertEqual(res.status_code, 200)
 
     def test_user_list(self):
+        """Checks on the length of the user list."""
         # Checking the list of users
         res = requests.get('{}/users'.format(BASE_URL))
         self.assertEqual(res.status_code, 200)
@@ -171,26 +177,31 @@ class UserTest(RestTest):
         self.assertEqual(len(res.json()), numUsers+2)
 
     def test_invalid_email(self):
+        """Try to create an user with an invalid email. Expected: 401"""
         res = requests.post('{}/users'.format(BASE_URL), json = {'name':'invalid_email_user', 'email': 'invalid_email', 'password': '12345'})
         self.assertEqual(res.status_code, 422)
 
     def test_short_password(self):
+        """Try to create an user with a password which is too short. Expected: 401"""
         res = requests.post('{}/users'.format(BASE_URL), json = {'name':'short_pass_user', 'email': 'short_pass_user@test.com', 'password': '123'})
         self.assertEqual(res.status_code, 422)
 
     def test_same_email(self):
+        """Try to create two user with the same email. Expected: 201, 401"""
         res = requests.post('{}/users'.format(BASE_URL), json = {'name':'same_email1', 'email': 'same_email@test.com', 'password': '12345'})
         self.assertEqual(res.status_code, 201)
         res = requests.post('{}/users'.format(BASE_URL), json = {'name':'same_email2', 'email': 'same_email@test.com', 'password': '12345'})
         self.assertEqual(res.status_code, 422)
 
     def test_same_name(self):
+        """Try to create two user with the same name. Expected: 201, 401"""
         res = requests.post('{}/users'.format(BASE_URL), json = {'name':'same_name', 'email': 'same_name1@test.com', 'password': '12345'})
         self.assertEqual(res.status_code, 201)
         res = requests.post('{}/users'.format(BASE_URL), json = {'name':'same_name', 'email': 'same_name2@test.com', 'password': '12345'})
         self.assertEqual(res.status_code, 422)
 
     def test_get_non_existing_user(self):
+        """Try to GET a nonexisting user. Expected: 404"""
         res = requests.get('{}/users/-1'.format(BASE_URL))
         self.assertEqual(res.status_code, 404)
 
@@ -209,9 +220,28 @@ class UserTest(RestTest):
         self.assertTrue('PUT' in verbs)
         self.assertTrue('DELETE' in verbs)
 
+    def test_zombie_token(self):
+        """A token of a deleted user is used to attempt a privileged action. Expected: 401"""
+
+        # Create a new user
+        res = requests.post('{}/users'.format(BASE_URL), json = {'name':'zombie', 'email': 'zombie@middleware.polimi', 'password': '12345'})
+        self.assertEqual(res.status_code, 201)
+        user_id = str(res.json()['id'])
+        uHeaders = self.loginAs('zombie@middleware.polimi', '12345')
+
+        # Login as power user, delete zombie
+        powerHeaders = UserTest.loginAs('poweruser1@test.com', 'test')
+        res = requests.delete('{}/users/{}'.format(BASE_URL, user_id), headers = powerHeaders)
+        self.assertEqual(res.status_code, 200)
+
+        # Try to change profile with zombie's headers. Rejected!
+        res = requests.put('{}/users/{}'.format(BASE_URL, user_id), json = {'name':'zombie2', 'email': 'zombie2@email.com', 'password': 'secret'}, headers = uHeaders)
+        self.assertEqual(res.status_code, 401)
+
+
 class GameTest(RestTest):
     def test_anon_create_game(self):
-        """Creating game without auth. Expected: 401"""
+        """Create a game without auth. Expected: 401"""
         res = requests.post('{}/games'.format(BASE_URL), json = {'name':'Chess', 'designers': ['a', 'b'], 'cover': 'imagedata'})
         self.assertEqual(res.status_code, 401)
 
@@ -250,7 +280,7 @@ class GameTest(RestTest):
         self.assertEqual(res.status_code, 405)
 
     def test_get_list_games(self):
-        # Get list of games
+        """Gets the list of games. Expected: 200, at least one game"""
         res = requests.get('{}/games'.format(BASE_URL))
         self.assertEqual(res.status_code, 200)
         self.assertGreaterEqual(len(res.json()), 1)
@@ -278,12 +308,11 @@ class PlayTest(RestTest):
     @classmethod
     def setUpClass(cls):
         super(PlayTest, cls).setUpClass()
+        runSeeds()
 
-        os.system('npm run seeds')
         # Create a new user
         res = requests.post('{}/users'.format(BASE_URL), json = {'name':'play_user', 'email': 'play_user@test.com', 'password': '12345'})
         PlayTest.user_id = res.json()['id']
-
         PlayTest.headersObj = UserTest.loginAs('play_user@test.com', '12345')
 
         # Get game 1
@@ -347,7 +376,7 @@ class PlayTest(RestTest):
         self.assertEqual(res.status_code, 201)
 
     def test_invalid_gameid(self):
-        # Create a new play with invalid game id
+        """Create a new play with invalid game id. Expected: 422"""
         res = requests.post('{}/users/{}/plays'.format(BASE_URL, PlayTest.user_id),
                             json = {
                                 'name': 'play_user',
@@ -358,10 +387,12 @@ class PlayTest(RestTest):
         self.assertEqual(res.json()[0]['param'], 'game_id')
 
     def test_get_non_existing_play(self):
+        """Try to get a nonexisting play on an existing user. Expected: 404"""
         res = requests.get('{}/users/{}/plays/-1'.format(BASE_URL, PlayTest.user_id))
         self.assertEqual(res.status_code, 404)
 
     def test_search_plays_by_gameid(self):
+        """Tests on the search of plays for a specific user, ordered by game id."""
         # Create a new user
         res = requests.post('{}/users'.format(BASE_URL), json = {'name':'u1', 'email': 'u1@test.com', 'password': '12345'})
         u1_id = res.json()['id']
@@ -387,7 +418,7 @@ class PlayTest(RestTest):
                                     'played_at': PlayTest.timestamp + i * 10,
                                     'game_id': game_ids[i]})
 
-        # Get games for user, ordered by game id, descending
+        # Get plays for user, ordered by game id, descending
         res = requests.get(
             '{}/users/{}/plays'.format(BASE_URL, u1_id),
             params={'order': 'game_id', 'order_type': 'desc'})
@@ -396,7 +427,7 @@ class PlayTest(RestTest):
         for i in range(len(res.json())-1):
             self.assertGreater(res.json()[i]['game_id'], res.json()[i+1]['game_id'])
 
-        # Get games for user, ordered by game id, ascending
+        # Get plays for user, ordered by game id, ascending
         res = requests.get(
             '{}/users/{}/plays'.format(BASE_URL, u1_id),
             params={'order': 'game_id', 'order_type': 'asc'})
