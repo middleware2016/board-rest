@@ -35,45 +35,71 @@ class UserTest(RestTest):
         token = str(res.json()['token'])
         return {'Authorization':'Bearer '+token}
 
-    def setUp(self):
-        self.delete_all()
+    @classmethod
+    def setUpClass(cls):
         # Creating user
         res = requests.post('{}/users'.format(BASE_URL), json = {'name':'initial', 'email': 'initial@middleware.polimi', 'password': '12345'})
-        self.initial_user_id = str(res.json()['id'])
+        UserTest.initial_user_id = str(res.json()['id'])
 
         # Login with that user
-        self.headersObj = self.loginAs('initial@middleware.polimi', '12345')
+        UserTest.headersObj = UserTest.loginAs('initial@middleware.polimi', '12345')
 
-    def tearDown(self):
-        self.delete_all()
+    @classmethod
+    def tearDownClass(cls):
+        UserTest.delete_all()
 
-    def delete_all(self):
+    @classmethod
+    def delete_all(cls):
         # Deleting all existing users
         res = requests.delete('{}/clean'.format(BASE_URL))
-        self.assertEqual(res.status_code, 200)
 
     def test_user_creation(self):
+        """Creates an user and checks that it exists."""
         # Creating user
-        res = requests.post('{}/users'.format(BASE_URL), json = {'name':'pietro', 'email': 'pietro@middleware.polimi', 'password': '12345'})
+        res = requests.post('{}/users'.format(BASE_URL), json = {'name':'new1', 'email': 'new1@middleware.polimi', 'password': '12345'})
         self.assertEqual(res.status_code, 201)
         user_id = str(res.json()['id'])
 
         # Checking user
         res = requests.get('{}/users/{}'.format(BASE_URL, user_id))
         self.assertEqual(res.status_code, 200)
-        self.assertEqual(res.json()['name'], 'pietro')
+        self.assertEqual(res.json()['name'], 'new1')
 
     def test_put_user_without_auth(self):
+        """Tries to modify a user profile without login. Expected: 401"""
         # Doing a PUT without auth
-        res = requests.put('{}/users/{}'.format(BASE_URL, self.initial_user_id), json = {'name':'pietro', 'email': 'new@email.com', 'password': '12345'})
+        res = requests.put('{}/users/{}'.format(BASE_URL, UserTest.initial_user_id), json = {'name':'gfhfgh', 'email': 'fghfg@middleware.polimi', 'password': '12345'})
         self.assertEqual(res.status_code, 401)
 
     def test_put_own_user_with_auth(self):
         """Logged user tries to modify its own profile. Expected: 200"""
         # Doing a PUT with auth
-        res = requests.put('{}/users/{}'.format(BASE_URL, self.initial_user_id), json = {'name':'pietro', 'email': 'new@email.com', 'password': '12345'}, headers = self.headersObj)
+        res = requests.put('{}/users/{}'.format(BASE_URL, UserTest.initial_user_id), json = {'name':'updated_initial', 'email': 'updated_initial@email.com', 'password': 'secret'}, headers = UserTest.headersObj)
         self.assertEqual(res.status_code, 200)
-        self.assertEqual(res.json()['email'], 'new@email.com')
+        self.assertEqual(res.json()['name'], 'updated_initial')
+        self.assertEqual(res.json()['email'], 'updated_initial@email.com')
+
+    def test_normal_put_other_user(self):
+        """Logged unprivileged user tries to modify the profile of another user. Expected: 403"""
+        # Create another user.
+        res = requests.post('{}/users'.format(BASE_URL), json = {'name':'to_modify', 'email': 'to_modify@middleware.polimi', 'password': '12345'})
+        self.assertEqual(res.status_code, 201)
+        user_id = str(res.json()['id'])
+        # Doing a PUT with auth
+        res = requests.put('{}/users/{}'.format(BASE_URL, user_id), json = {'name':'dfssadf', 'email': 'new@email.com', 'password': '12345'}, headers = UserTest.headersObj)
+        self.assertEqual(res.status_code, 403)
+
+    def test_power_put_other_user(self):
+        """Logged power user tries to modify the profile of another user. Expected: 403"""
+        # Create another user.
+        res = requests.post('{}/users'.format(BASE_URL), json = {'name':'to_modify2', 'email': 'to_modify2@middleware.polimi', 'password': '12345'})
+        self.assertEqual(res.status_code, 201)
+        user_id = str(res.json()['id'])
+        # Login as power user
+        powerHeaders = UserTest.loginAs('poweruser1@test.com', 'test')
+        # Doing a PUT with auth
+        res = requests.put('{}/users/{}'.format(BASE_URL, user_id), json = {'name':'dfssadf', 'email': 'new@email.com', 'password': '12345'}, headers = powerHeaders)
+        self.assertEqual(res.status_code, 200)
 
     def test_delete_own_with_auth(self):
         """Logged user deletes his own profile. Expected: 200, then 404 on subsequent GET."""
@@ -91,14 +117,15 @@ class UserTest(RestTest):
 
     def test_delete_without_auth(self):
         """Anonymous user tries to delete the profile. Expected: 401"""
-        res = requests.delete('{}/users/{}'.format(BASE_URL, self.initial_user_id))
+        res = requests.delete('{}/users/{}'.format(BASE_URL, UserTest.initial_user_id))
         self.assertEqual(res.status_code, 401)
 
     def test_user_list(self):
         # Checking the list of users
         res = requests.get('{}/users'.format(BASE_URL))
         self.assertEqual(res.status_code, 200)
-        self.assertEqual(len(res.json()), 1)
+        self.assertGreaterEqual(len(res.json()), 1)
+        numUsers = len(res.json())
 
         # Creating two users
         for i in range(2):
@@ -108,7 +135,7 @@ class UserTest(RestTest):
         # Checking the list of users
         res = requests.get('{}/users'.format(BASE_URL))
         self.assertEqual(res.status_code, 200)
-        self.assertEqual(len(res.json()), 3)
+        self.assertEqual(len(res.json()), numUsers+2)
 
     def test_invalid_email(self):
         res = requests.post('{}/users'.format(BASE_URL), json = {'name':'invalid_email_user', 'email': 'invalid_email', 'password': '12345'})
