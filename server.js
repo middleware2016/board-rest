@@ -111,6 +111,7 @@ app.get('*', notImplemented);
 app.post('*', notImplemented);
 app.put('*', notImplemented);
 app.delete('*', notImplemented);
+app.options('*', (req,res)=>res.set('Allow', '').status(200).send());
 
 
 app.listen(app.get('port'), function() {
