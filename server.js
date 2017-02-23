@@ -75,23 +75,23 @@ app.post('/users/', user.post);
 app.put('/users/:id', ensureAuthenticated, user.put);
 app.delete('/users/:id', ensureAuthenticated, user.delete);
 app.post('/users/login', user.login);
-app.options('/users/',(req,res)=>res.send('GET, POST'));
-app.options('/users/login',(req,res)=>res.send('POST')); //this must be before :id version
-app.options('/users/:id',(req,res)=>res.send('GET, PUT, DELETE'));
+app.options('/users/',(req,res)=>res.set('Allow', 'GET,POST').status(200).send());
+app.options('/users/login',(req,res)=>res.set('Allow', 'POST').status(200).send()); //this must be before :id version
+app.options('/users/:id',(req,res)=>res.set('Allow', 'GET,PUT,DELETE').status(200).send());
 
 //games
 app.get('/games/', game.list);
 app.get('/games/:id', game.get);
 app.post('/games/', ensureAuthenticated, game.post);
-app.options('/games/',(req,res)=>res.send('GET, POST'));
-app.options('/games/:id',(req,res)=>res.send('GET'));
+app.options('/games/',(req,res)=>res.set('Allow', 'GET,POST').status(200).send());
+app.options('/games/:id',(req,res)=>res.set('Allow', 'GET').status(200).send());
 
 //plays
 app.get('/users/:userId/plays/', play.userMiddleware, play.list);
 app.get('/users/:userId/plays/:id', play.userMiddleware, play.get);
 app.post('/users/:userId/plays/', ensureAuthenticated, play.userMiddleware, play.post);
-app.options('/users/:userId/plays/',(req,res)=>res.send('GET, POST'));
-app.options('/users/:userId/plays/:id',(req,res)=>res.send('GET'));
+app.options('/users/:userId/plays/',(req,res)=>res.set('Allow', 'GET,POST').status(200).send());
+app.options('/users/:userId/plays/:id',(req,res)=>res.set('Allow', 'GET').status(200).send());
 
 //needed just for tests
 app.delete('/clean', (req, res, next)=>{

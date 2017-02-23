@@ -18,6 +18,11 @@ import os
 
 BASE_URL = 'http://localhost:3000'
 
+def get_options_verbs(url):
+    res = requests.options(url)
+    verbs = res.headers['Allow'].split(',')
+    return verbs
+
 class RestTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
@@ -189,7 +194,20 @@ class UserTest(RestTest):
         res = requests.get('{}/users/-1'.format(BASE_URL))
         self.assertEqual(res.status_code, 404)
 
+    def test_options_user_list(self):
+        """OPTIONS on /users should return GET, POST"""
+        verbs = get_options_verbs('{}/users'.format(BASE_URL))
+        self.assertEqual(len(verbs), 2)
+        self.assertTrue('GET' in verbs)
+        self.assertTrue('POST' in verbs)
 
+    def test_options_user(self):
+        """OPTIONS on /users/:id should return GET, PUT, DELETE"""
+        verbs = get_options_verbs('{}/users/{}'.format(BASE_URL, UserTest.initial_user_id))
+        self.assertEqual(len(verbs), 3)
+        self.assertTrue('GET' in verbs)
+        self.assertTrue('PUT' in verbs)
+        self.assertTrue('DELETE' in verbs)
 
 class GameTest(RestTest):
     def test_anon_create_game(self):
@@ -236,6 +254,19 @@ class GameTest(RestTest):
         res = requests.get('{}/games'.format(BASE_URL))
         self.assertEqual(res.status_code, 200)
         self.assertGreaterEqual(len(res.json()), 1)
+
+    def test_game_list_options(self):
+        """OPTIONS on /games should return GET, POST"""
+        verbs = get_options_verbs('{}/games'.format(BASE_URL))
+        self.assertEqual(len(verbs), 2)
+        self.assertTrue('GET' in verbs)
+        self.assertTrue('POST' in verbs)
+
+    def test_game_options(self):
+        """OPTIONS on /games/:id should return GET"""
+        verbs = get_options_verbs('{}/games/1'.format(BASE_URL))
+        self.assertEqual(len(verbs), 1)
+        self.assertTrue('GET' in verbs)
 
 class PlayTest(RestTest):
 
@@ -373,6 +404,27 @@ class PlayTest(RestTest):
         #self.assertEqual(len(res.json()), num_plays)
         for i in range(len(res.json())-1):
             self.assertLess(res.json()[i]['game_id'], res.json()[i+1]['game_id'])
+
+    def test_plays_list_options(self):
+        """OPTIONS on /users/:id/plays should return GET, POST"""
+        verbs = get_options_verbs('{}/users/{}/plays'.format(BASE_URL, PlayTest.user_id))
+        self.assertEqual(len(verbs), 2)
+        self.assertTrue('GET' in verbs)
+        self.assertTrue('POST' in verbs)
+
+    def test_plays_options(self):
+        """OPTIONS on /users/:id/plays/:pid should return GET"""
+        # Create a new play
+        res = requests.post('{}/users/{}/plays'.format(BASE_URL, PlayTest.user_id),
+                            json = {
+                                'name': 'PlayOptions',
+                                'additional_data': {'a': 'b'},
+                                'played_at': PlayTest.timestamp,
+                                'game_id': PlayTest.game_id}, headers=PlayTest.headersObj)
+        play_id = res.json()['id']
+        verbs = get_options_verbs('{}/users/{}/plays/{}'.format(BASE_URL, PlayTest.user_id, play_id))
+        self.assertEqual(len(verbs), 1)
+        self.assertTrue('GET' in verbs)
 
 if __name__ == '__main__':
     unittest.main()
