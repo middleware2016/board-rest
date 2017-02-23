@@ -10,7 +10,7 @@ exports.userMiddleware = (req, res, next) => {
     return new User({id: req.params.userId}).fetch().then((user)=>{
         if(!user)
             return res.status(404).send({ msg: 'Wrong user id' });
-        req.user = user;
+        req.owner = user;
         next();
     }).catch(()=>{
         console.error(err);
@@ -30,7 +30,7 @@ exports.list = (req, res, next)=>{
     let search = req.query.search || '%';
 
     //retrieve
-    return req.user.fetch({withRelated:[
+    return req.owner.fetch({withRelated:[
         { plays: (query)=> query.where('name', 'LIKE', search).orWhere('json_additional_data', 'LIKE', search).orderBy(order, orderType)}
         ]})
         .then(data=>res.send(data.related('plays').toJSON()))
@@ -45,7 +45,7 @@ exports.get = (req, res, next)=>{
         .then(data=>{
             if(!data)
                 return res.status(404).send({msg: "Play not found"});
-            if(data.get('user_id') != req.user.id)
+            if(data.get('user_id') != req.owner.id)
                 return res.status(403).send({msg: "Play is not of this user"});
             res.send(data.toJSON())
         })
@@ -79,7 +79,7 @@ exports.post = (req, res, next)=>{
                         "msg": "Game_id inserted doesn't exist"
                     }
                 ]);
-            return req.user.plays().create({
+            return req.owner.plays().create({
                 name: req.body.name,
                 additional_data: req.body.additional_data,
                 played_at: req.body.played_at,

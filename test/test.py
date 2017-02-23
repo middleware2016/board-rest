@@ -28,7 +28,8 @@ class RestTest(unittest.TestCase):
 class UserTest(RestTest):
     # Before and after each test, delete all the users.
 
-    def loginAs(self, email, password):
+    @classmethod
+    def loginAs(cls, email, password):
         """Return the headers"""
         res = requests.post('{}/users/login'.format(BASE_URL), json = {'email': email, 'password': password})
         token = str(res.json()['token'])
@@ -67,13 +68,15 @@ class UserTest(RestTest):
         res = requests.put('{}/users/{}'.format(BASE_URL, self.initial_user_id), json = {'name':'pietro', 'email': 'new@email.com', 'password': '12345'})
         self.assertEqual(res.status_code, 401)
 
-    def test_put_user_with_auth(self):
+    def test_put_own_user_with_auth(self):
+        """Logged user tries to modify its own profile. Expected: 200"""
         # Doing a PUT with auth
         res = requests.put('{}/users/{}'.format(BASE_URL, self.initial_user_id), json = {'name':'pietro', 'email': 'new@email.com', 'password': '12345'}, headers = self.headersObj)
         self.assertEqual(res.status_code, 200)
         self.assertEqual(res.json()['email'], 'new@email.com')
 
     def test_delete_own_with_auth(self):
+        """Logged user deletes his own profile. Expected: 200, then 404 on subsequent GET."""
         # Creating user
         res = requests.post('{}/users'.format(BASE_URL), json = {'name':'to_delete', 'email': 'delete@middleware.polimi', 'password': '12345'})
         self.assertEqual(res.status_code, 201)
@@ -87,6 +90,7 @@ class UserTest(RestTest):
         self.assertEqual(res.status_code, 404)
 
     def test_delete_without_auth(self):
+        """Anonymous user tries to delete the profile. Expected: 401"""
         res = requests.delete('{}/users/{}'.format(BASE_URL, self.initial_user_id))
         self.assertEqual(res.status_code, 401)
 
@@ -141,20 +145,14 @@ class GameTest(RestTest):
         self.assertEqual(res.status_code, 401)
 
         # Login no power
-        res = requests.post('{}/users/login'.format(BASE_URL), json = {'email': 'testuser2@test.com', 'password': 'test'})
-        self.assertEqual(res.status_code, 200)
-        token = str(res.json()['token'])
-        headersObj = {'Authorization':'Bearer '+token}
+        headersObj = UserTest.loginAs('testuser2@test.com', 'test')
 
 		# Creating game with auth (no power)
         res = requests.post('{}/games'.format(BASE_URL), json = {'name':'Chess', 'designers': ['a', 'b'], 'cover': 'imagedata'}, headers=headersObj)
         self.assertEqual(res.status_code, 403)
 
         # Login power
-        res = requests.post('{}/users/login'.format(BASE_URL), json = {'email': 'testuser1@test.com', 'password': 'test'})
-        self.assertEqual(res.status_code, 200)
-        token = str(res.json()['token'])
-        headersObj = {'Authorization':'Bearer '+token}
+        headersObj = UserTest.loginAs('poweruser1@test.com', 'test')
 
         # Creating game with auth (power)
         res = requests.post('{}/games'.format(BASE_URL), json = {'name':'Chess', 'designers': ['a', 'b'], 'cover': 'imagedata'}, headers=headersObj)
@@ -187,18 +185,14 @@ class PlayTest(RestTest):
         res = requests.post('{}/users'.format(BASE_URL), json = {'name':'play_user', 'email': 'play_user@test.com', 'password': '12345'})
         PlayTest.user_id = res.json()['id']
 
-        res = requests.post('{}/users/login'.format(BASE_URL), json = {'email': 'play_user@test.com', 'password': '12345'})
-        #self.assertEqual(res.status_code, 200)
-        token = str(res.json()['token'])
-        PlayTest.headersObj = {'Authorization':'Bearer '+token}
+        PlayTest.headersObj = UserTest.loginAs('play_user@test.com', '12345')
 
-        # Create new game
-        #res = requests.post('{}/games'.format(BASE_URL), json = {'name':'Game1', 'designers': ['x', 'y'], 'cover': 'imagedata'})
-        #PlayTest.game_id = res.json()['id']
+        # Get game 1
         res = requests.get('{}/games'.format(BASE_URL))
         PlayTest.game_id = res.json()[0]['id']
 
-    def test_play_creation(self):
+    def test_create_own_play(self):
+        """Normal user tries to create a play of his user. Expected: 201"""
         # Create a new play
         res = requests.post('{}/users/{}/plays'.format(BASE_URL, PlayTest.user_id),
                             json = {
@@ -222,6 +216,36 @@ class PlayTest(RestTest):
         self.assertEqual(res.json()['played_at'], PlayTest.timestamp)
         self.assertEqual(res.json()['name'], 'play_user')
         self.assertEqual(res.json()['game_id'], PlayTest.game_id)
+
+    def test_create_others_play_nopower(self):
+        """Normal user tries to create a play of another user. Expected: 403"""
+        # Create another user
+        res = requests.post('{}/users'.format(BASE_URL), json = {'name':'play_owner', 'email': 'play_owner@test.com', 'password': '12345'})
+        owner_id = res.json()['id']
+        # Create a new play for that user, with the credentials of the original user
+        res = requests.post('{}/users/{}/plays'.format(BASE_URL, owner_id),
+                            json = {
+                                'name': 'Prova',
+                                'additional_data': {'x': 'y'},
+                                'played_at': PlayTest.timestamp,
+                                'game_id': PlayTest.game_id}, headers=PlayTest.headersObj)
+        self.assertEqual(res.status_code, 403)
+
+    def test_create_others_play_power(self):
+        """Power user tries to create a play of another user. Expected: 201"""
+        # Create another user
+        res = requests.post('{}/users'.format(BASE_URL), json = {'name':'play_owner2', 'email': 'play_owner2@test.com', 'password': '12345'})
+        owner_id = res.json()['id']
+        # Login as power user
+        powerHeaders = UserTest.loginAs('poweruser1@test.com', 'test')
+        # Create a new play for that user, with the power user credentials
+        res = requests.post('{}/users/{}/plays'.format(BASE_URL, owner_id),
+                            json = {
+                                'name': 'Prova',
+                                'additional_data': {'x': 'y'},
+                                'played_at': PlayTest.timestamp,
+                                'game_id': PlayTest.game_id}, headers=powerHeaders)
+        self.assertEqual(res.status_code, 201)
 
     def test_invalid_gameid(self):
         # Create a new play with invalid game id
@@ -247,7 +271,7 @@ class PlayTest(RestTest):
         num_plays = 4
         game_ids = []
 
-        res = requests.post('{}/users/login'.format(BASE_URL), json = {'email': 'testuser1@test.com', 'password': 'test'})
+        res = requests.post('{}/users/login'.format(BASE_URL), json = {'email': 'poweruser1@test.com', 'password': 'test'})
         self.assertEqual(res.status_code, 200)
         token = str(res.json()['token'])
         PlayTest.headersObj = {'Authorization':'Bearer '+token}

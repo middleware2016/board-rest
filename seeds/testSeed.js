@@ -23,8 +23,8 @@ exports.seed = function(knex, Promise) {
             return Promise.all([
                 knex('users').insert({
                     id: 1,
-                    name: 'TestUser1',
-                    email:'testuser1@test.com',
+                    name: 'PowerUser1',
+                    email:'poweruser1@test.com',
                     password: hash,
                     created_at: Date.now(),
                     updated_at: Date.now(),
