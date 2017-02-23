@@ -192,13 +192,13 @@ class UserTest(RestTest):
 
 
 class GameTest(RestTest):
-    def test_game_creation(self):
-        os.system('npm run seeds')
-
-        # Creating game without auth
+    def test_anon_create_game(self):
+        """Creating game without auth. Expected: 401"""
         res = requests.post('{}/games'.format(BASE_URL), json = {'name':'Chess', 'designers': ['a', 'b'], 'cover': 'imagedata'})
         self.assertEqual(res.status_code, 401)
 
+    def test_normal_create_game(self):
+        """Normal user tries to create game. Expected: 401"""
         # Login no power
         headersObj = UserTest.loginAs('testuser2@test.com', 'test')
 
@@ -206,6 +206,8 @@ class GameTest(RestTest):
         res = requests.post('{}/games'.format(BASE_URL), json = {'name':'Chess', 'designers': ['a', 'b'], 'cover': 'imagedata'}, headers=headersObj)
         self.assertEqual(res.status_code, 403)
 
+    def test_power_create_game(self):
+        """Power user tries to create game. Expected: 201"""
         # Login power
         headersObj = UserTest.loginAs('poweruser1@test.com', 'test')
 
@@ -220,9 +222,20 @@ class GameTest(RestTest):
         self.assertEqual(res.json()['name'], 'Chess')
         self.assertEqual(res.json()['designers'], ['a', 'b'])
 
+    def test_delete_game(self):
+        """Anonymous user tries to delete a game. Expected: 405"""
+        # Get list of games
+        res = requests.get('{}/games'.format(BASE_URL))
+        game_id = res.json()[0]['id']
         # Deleting game: not supported
         res = requests.delete('{}/games/{}'.format(BASE_URL, game_id))
         self.assertEqual(res.status_code, 405)
+
+    def test_get_list_games(self):
+        # Get list of games
+        res = requests.get('{}/games'.format(BASE_URL))
+        self.assertEqual(res.status_code, 200)
+        self.assertGreaterEqual(len(res.json()), 1)
 
 class PlayTest(RestTest):
 
