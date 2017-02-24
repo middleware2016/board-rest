@@ -45,6 +45,11 @@ class UserTest(RestTest):
         return {'Authorization':'Bearer '+token}
 
     @classmethod
+    def getExpiredToken(cls, userId):
+        """Calls the Node script to get an expired token for the given user ID."""
+        return subprocess.check_output(["node", "expired.js", str(userId)], universal_newlines=True).strip()
+
+    @classmethod
     def setUpClass(cls):
         """Creates a normal user for testing. This user should not be deleted by the tests."""
         # Creating user
@@ -222,7 +227,6 @@ class UserTest(RestTest):
 
     def test_zombie_token(self):
         """A token of a deleted user is used to attempt a privileged action. Expected: 401"""
-
         # Create a new user
         res = requests.post('{}/users'.format(BASE_URL), json = {'name':'zombie', 'email': 'zombie@middleware.polimi', 'password': '12345'})
         self.assertEqual(res.status_code, 201)
@@ -236,6 +240,21 @@ class UserTest(RestTest):
 
         # Try to change profile with zombie's headers. Rejected!
         res = requests.put('{}/users/{}'.format(BASE_URL, user_id), json = {'name':'zombie2', 'email': 'zombie2@email.com', 'password': 'secret'}, headers = uHeaders)
+        self.assertEqual(res.status_code, 401)
+
+    def test_expired_token_login(self):
+        """An expired token is used to attempt an action from a logged in user. Expected: 401"""
+        expiredToken = self.getExpiredToken(UserTest.initial_user_id)
+        expiredHeader = {'Authorization' : 'Bearer ' + expiredToken}
+        # Attempt to change profile
+        res = requests.put('{}/users/{}'.format(BASE_URL, UserTest.initial_user_id), json = {'name':'expired', 'email': 'expired@email.com', 'password': 'secret'}, headers = expiredHeader)
+        self.assertEqual(res.status_code, 401)
+
+    def test_invalid_token_login(self):
+        """An altered token is used to attempt an action from a logged in user. Expected: 401"""
+        newHeader = {'Authorization' : 'Bearer ' + UserTest.headersObj['Authorization'] + 'x'}
+        # Attempt to change profile
+        res = requests.put('{}/users/{}'.format(BASE_URL, UserTest.initial_user_id), json = {'name':'expired', 'email': 'expired@email.com', 'password': 'secret'}, headers = newHeader)
         self.assertEqual(res.status_code, 401)
 
 

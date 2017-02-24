@@ -1,5 +1,8 @@
 /**
  * Created by claudio on 23/02/17.
+ *
+ * Generates an expired token for the given user ID.
+ * Used for testing.
  */
 "use strict";
 let moment = require('moment');
@@ -21,4 +24,4 @@ if(process.argv.length != 3){
     console.error('Usage node expired.js {ID}');
     process.exit();
 }
-console.log('Token',generateToken(process.argv[2]));
+console.log(generateToken(process.argv[2]));
