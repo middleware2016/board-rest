@@ -9,7 +9,7 @@ exports.up = function(knex, Promise) {
                 .onUpdate('cascade');
             table.string('name');
             table.datetime('played_at');
-            table.json('json_additional_data');
+            table.text('json_additional_data');
             table.timestamps();
         })
     ]);
