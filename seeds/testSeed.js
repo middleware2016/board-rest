@@ -75,7 +75,7 @@ exports.seed = function(knex, Promise) {
                     user_id: 1,
                     game_id: 1,
                     json_additional_data: JSON.stringify({winner: 1}),
-                    played_at: new Date(),
+                    played_at: new Date("2017-01-05"),
                     created_at: new Date(),
                     updated_at: new Date()
                 }),
@@ -85,7 +85,7 @@ exports.seed = function(knex, Promise) {
                     user_id: 1,
                     game_id: 2,
                     json_additional_data: JSON.stringify({duration: '90'}),
-                    played_at: new Date(),
+                    played_at: new Date("2015-07-25"),
                     created_at: new Date(),
                     updated_at: new Date()
                 }),
@@ -95,7 +95,7 @@ exports.seed = function(knex, Promise) {
                     user_id: 2,
                     game_id: 3,
                     json_additional_data: JSON.stringify({winner: 1, duration: 30}),
-                    played_at: new Date(),
+                    played_at: new Date("1994-02-22"),
                     created_at: new Date(),
                     updated_at: new Date()
                 })

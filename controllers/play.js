@@ -20,18 +20,29 @@ exports.userMiddleware = (req, res, next) => {
 
 
 exports.list = (req, res, next)=>{
-    //order
-    let order = req.query.order || 'created_at';
-    let orderType = req.query.order_type;
-    if(orderType!='desc')
-        orderType = 'asc';
-
-    //filters
-    let search = req.query.search || '%';
-
     //retrieve
     return req.owner.fetch({withRelated:[
-        { plays: (query)=> query.where('name', 'LIKE', search).orWhere('json_additional_data', 'LIKE', search).orderBy(order, orderType)}
+        { plays: function(query) {
+            // Filtering
+            if(req.query.search)
+                query = query.where(function(){
+                    this.where('name', 'LIKE', search).orWhere('json_additional_data', 'LIKE', search)
+                });
+            if(req.query.from_date)
+                query = query.where('played_at', '>=', req.query.from_date);
+            if(req.query.to_date)
+                query = query.where('played_at', '<=', req.query.to_date);
+            if(req.query.game)
+                query = query.where('game_id', 'LIKE', req.query.game);
+
+            // Ordering
+            let order = req.query.order || 'created_at';
+            let orderType = req.query.order_type;
+            if(orderType!='desc')
+                orderType = 'asc';
+            query = query.orderBy(order, orderType);
+            return query;
+        }}
         ]})
         .then(data=>res.send(data.related('plays').toJSON()))
         .catch(err=>{
