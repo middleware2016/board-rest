@@ -67,6 +67,9 @@ exports.get = (req, res, next)=>{
 };
 
 exports.post = (req, res, next)=>{
+    if (req.user.get('role') != 'power' && req.user.get('id') != req.params.userId)
+        return res.status(403).send({msg: "You are not authorized to create plays"});
+
     req.assert('name', 'Name cannot be blank').notEmpty();
     req.assert('additional_data', 'Additional_data cannot be blank').notEmpty(); //TODO check is list/object
     req.assert('played_at', 'Played_at cannot be blank').isInt();
@@ -77,9 +80,6 @@ exports.post = (req, res, next)=>{
     if (errors) {
         return res.status(422).send(errors);
     }
-
-    if (req.user.get('role') != 'power' && req.user.get('id') != req.params.userId)
-        return res.status(403).send({msg: "You are not authorized to create plays"});
 
     return new Game({id: req.body.game_id}).fetch()
         .then(data=>{

@@ -21,7 +21,7 @@ BASE_URL = 'http://localhost:3000'
 def runSeeds():
     """Run seeds to reset the database"""
     with open(os.devnull, 'w') as devnull:
-        subprocess.call(["npm", "run", "seeds"], stdout=devnull)
+        subprocess.run(["npm", "run", "seeds"], stdout=devnull)
 
 def get_options_verbs(url):
     """Performs an OPTIONS HTTP request on the given URL and gives the list of allowed HTTP verbs."""
@@ -279,15 +279,15 @@ class GameTest(RestTest):
         headersObj = UserTest.loginAs('poweruser1@test.com', 'test')
 
         # Creating game with auth (power)
-        res = requests.post('{}/games'.format(BASE_URL), json = {'name':'Chess', 'designers': ['a', 'b'], 'cover': 'imagedata'}, headers=headersObj)
+        res = requests.post('{}/games'.format(BASE_URL), json = {'name':'Backgammon', 'designers': ['c', 'd'], 'cover': 'imagedata'}, headers=headersObj)
         self.assertEqual(res.status_code, 201)
         game_id = str(res.json()['id'])
 
         # Checking game existence
         res = requests.get('{}/games/{}'.format(BASE_URL, game_id))
         self.assertEqual(res.status_code, 200)
-        self.assertEqual(res.json()['name'], 'Chess')
-        self.assertEqual(res.json()['designers'], ['a', 'b'])
+        self.assertEqual(res.json()['name'], 'Backgammon')
+        self.assertEqual(res.json()['designers'], ['c', 'd'])
 
     def test_delete_game(self):
         """Anonymous user tries to delete a game. Expected: 405"""

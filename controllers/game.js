@@ -43,6 +43,9 @@ exports.get = (req, res, next)=>{
 };
 
 exports.post = (req, res, next)=>{
+    if (req.user.get('role') != 'power')
+        return res.status(403).send({msg: "You are not a power user"});
+
     req.assert('name', 'Name cannot be blank').notEmpty();
     req.assert('designers', 'Designers cannot be blank').notEmpty(); //TODO check is list
     req.assert('cover', 'Cover cannot be blank').notEmpty();
@@ -52,9 +55,6 @@ exports.post = (req, res, next)=>{
     if (errors) {
         return res.status(422).send(errors);
     }
-
-    if (req.user.get('role') != 'power')
-        return res.status(403).send({msg: "You are not a power user"});
 
     return new Game({
         name: req.body.name,
